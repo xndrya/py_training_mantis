@@ -1,63 +1,37 @@
-import pymysql
-from model.group import Group
-from model.contact import Contact
-
+import pymysql.cursors
+from model.project import Project
 
 class DbFixture:
+
     def __init__(self, host, name, user, password):
         self.host = host
         self.name = name
         self.user = user
         self.password = password
-        self.connection = pymysql.connect(host = host, database = name, user = user, password = password, autocommit = True)
+        self.connection = pymysql.connect(host=host, database=name, user=user, password=password, autocommit=True)
 
-    def get_contact_list(self):
-        list = []
+    def get_project_list(self):
+        project_list = []
+        status_list = {
+            10: "development",
+            30: "release",
+            50: "stable",
+            70: "obsolete",
+        }
+        view_state_list = {
+            10: "public",
+            50: "private"
+        }
         cursor = self.connection.cursor()
         try:
-            cursor.execute("select id, firstname, lastname from addressbook where deprecated = '0000-00-00 00:00:00'")
+            cursor.execute("SELECT name, status, view_state, description FROM mantis_project_table")
             for row in cursor:
-                (id, firstname, lastname) = row
-                list.append(Contact(id=str(id), firstname=firstname, lastname=lastname))
+                (name, status_num, view_state_num, description) = row
+                project_list.append(Project(name=name, status=status_list[status_num],
+                                    view_status=view_state_list[view_state_num], description=description))
         finally:
             cursor.close()
-        return list
-
-    def get_group_list(self):
-        list = []
-        cursor = self.connection.cursor()
-        try:
-            cursor.execute("select group_id, group_name, group_header, group_footer from group_list")
-            for row in cursor:
-                (id, name, header, footer) = row
-                list.append(Group(id=str(id), group_name=name, group_header=header, group_footer=footer))
-        finally:
-            cursor.close()
-        return list
-
-    def get_group_by_id(self, id_in):
-        cursor = self.connection.cursor()
-        try:
-            cursor.execute("SELECT group_id, group_name, group_header, group_footer FROM group_list WHERE group_id='%s'" % id_in)
-            (id, name, header, footer) = cursor.fetchone()
-            group_return = Group(id=str(id), group_name=name, group_header=header, group_footer=footer)
-        finally:
-            cursor.close()
-        return group_return
-
-    def get_contact_by_id(self, id_in):
-        cursor = self.connection.cursor()
-        try:
-            cursor.execute("SELECT id, firstname, lastname, middlename, nickname, company, "
-                           "title, address, email, email2, email3, home, mobile, work, phone2 "
-                           "FROM addressbook WHERE deprecated='0000-00-00 00:00:00' and id='%s'" % id_in)
-            (id, firstname, lastname, middlename, nickname, company, title, address, email, email2, email3, home, mobile, work, phone2) = cursor.fetchone()
-            contact_return = Contact(id=str(id), firstname=firstname, lastname=lastname, address=address, email1=email,
-                                     email2=email2, email3=email3, home_phone=home, mobile=mobile, workphone=work,
-                                     phone2=phone2)
-        finally:
-            cursor.close()
-        return contact_return
+        return project_list
 
     def destroy(self):
         self.connection.close()
