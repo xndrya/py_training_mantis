@@ -1,6 +1,7 @@
 from selenium import webdriver
 from fixture.session import SessionHelper
 from fixture.project import ProjectHelper
+from fixture.soap import SoapHelper
 
 class Application:
     def __init__(self, browser, base_url):
@@ -12,6 +13,7 @@ class Application:
             raise ValueError("Unknown browser: %s" % browser)
         self.session = SessionHelper(self)
         self.project = ProjectHelper(self)
+        self.soap = SoapHelper(self)
         self.wd.implicitly_wait(3)
         self.base_url = base_url
 
